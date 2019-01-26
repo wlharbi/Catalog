@@ -62,9 +62,9 @@ class Item(Base):
         return {
             'name': self.name,
             'description': self.description,
+            'category_id': self.category_id,
             'id': self.id,
         }
-
 
 engine = create_engine('sqlite:///Categories.db')
 
