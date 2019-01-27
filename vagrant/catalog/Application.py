@@ -180,11 +180,12 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-        response = make_response
-        (
+        response = make_response(
             json.dumps('Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
+
+    return response
 
 
 # JSON APIs to view Category Information
@@ -251,6 +252,9 @@ def editCategory(category_name):
         return redirect('/login')
     editedCategory = session.query(
         Category).filter_by(name=category_name).one()
+    if editedCategory.user_id != login_session['user_id']:
+        flash('You are not allowed to edit this catalog')
+        return redirect(url_for('showCategories'))
     if request.method == 'POST':
         if request.form['name']:
             exists = session.query(Category).filter_by(
@@ -260,7 +264,8 @@ def editCategory(category_name):
                 flash('Category Successfully Edited %s' % editedCategory.name)
             else:
                 flash('Category Name Already Exists')
-        return redirect(url_for('showCatalog'))
+        return redirect(url_for('showCatalog',
+                        category_name=request.form['name']))
 
     else:
         return render_template('editCategory.html', category=editedCategory)
@@ -273,6 +278,9 @@ def deleteCategory(category_name):
         return redirect('/login')
     categoryToDelete = session.query(
         Category).filter_by(name=category_name).one()
+    if categoryToDelete.user_id != login_session['user_id']:
+        flash('You are not allowed to edit this catalog items')
+        return redirect(url_for('showCategories'))
     if request.method == 'POST':
         session.delete(categoryToDelete)
         flash('%s Successfully Deleted' % categoryToDelete.name)
@@ -288,9 +296,16 @@ def deleteCategory(category_name):
 def showCatalog(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
     categories = session.query(Category).all()
-    items = session.query(Item).filter_by(category_id=category.id).all()
-    return render_template('catalog.html', Category=category, items=items,
-                           category_name=category.name, categories=categories)
+    if category.name:
+        items = session.query(Item).filter_by(category_id=category.id).all()
+        return render_template('catalog.html',
+                               Category=category,
+                               items=items,
+                               category_name=category.name,
+                               categories=categories)
+    else:
+        flash('Category not found')
+        return redirect(url_for('showCategories'))
 
 
 # Display Items
@@ -340,10 +355,7 @@ def editItem(category_name, item_name):
     editedItem = session.query(Item).filter_by(name=item_name).one()
     if editedItem.user_id != login_session['user_id']:
         flash('You are not allowed to edit this catalog items')
-        return render_template('editItem.html',
-                               category_name=category_name,
-                               item_name=item_name,
-                               item=editedItem)
+        return redirect(url_for('showCategories'))
     category = session.query(Category).filter_by(name=category_name).one()
     if request.method == 'POST':
         if request.form['name']:
@@ -371,7 +383,8 @@ def deleteItem(category_name, item_name):
     itemToDelete = session.query(Item).filter_by(name=item_name).one()
     if itemToDelete.user_id != login_session['user_id']:
         flash('You are not allowed to delete this catalog items')
-        return redirect(url_for('showCatalog', category_name=category_name))
+        return redirect(url_for('showCatalog',
+                                category_name=category_name))
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
