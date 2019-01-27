@@ -1,5 +1,10 @@
-from flask import Flask, render_template, request
-from flask import redirect, jsonify, url_for, flash
+from flask import (Flask,
+                   render_template,
+                   request,
+                   redirect,
+                   jsonify,
+                   url_for,
+                   flash)
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_category import Base, Category, Item, User
@@ -84,7 +89,8 @@ def gconnect():
 
     # Verify that the access token is valid for this app.
     if result['issued_to'] != CLIENT_ID:
-        response = make_response(
+        response = make_response
+        (
             json.dumps("Token's client ID does not match app's."), 401)
         print ("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
@@ -93,9 +99,9 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response =
-        make_response(json.dumps('Current user is already connected.'),
-                      200)
+        response = make_response
+        (
+            json.dumps('Current user is already connected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -110,7 +116,8 @@ def gconnect():
 
     data = answer.json()
 
-    login_session['username'] = data['name']
+    # login_session['username'] = data['name']
+    login_session['username'] = data.get('name', '')
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
@@ -150,31 +157,32 @@ def gdisconnect():
     print ('User name is: ')
     print (login_session['username'])
     if access_token is None:
-        print 'Access Token is None'
-        response =
-        make_response(json.dumps('Current user not connected.'),
-                      401)
+        print ('Access Token is None')
+        response = make_response(json.dumps('Current user not connected.'),
+                                 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     url = ('https://accounts.google.com/o/oauth2/revoke?token=%s'
            % login_session['access_token'])
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result is '
-    print result
+    print ('result is ')
+    print (result)
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
         del login_session['picture']
+        del login_session['user_id']
+        login_session.clear()
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-        response =
-        make_response(json.dumps('Failed to revoke token for given user.',
-                      400))
+        response = make_response
+        (
+            json.dumps('Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -400,8 +408,9 @@ def getUserID(email):
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
-    except:
+    except NoResultFound:
         return None
+
 
 if __name__ == '__main__':
     app.secret_key = 'Not_so_so_secret'

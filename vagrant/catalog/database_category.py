@@ -7,6 +7,9 @@ Base = declarative_base()
 
 
 class User(Base):
+    """
+    Registered user information is stored in db
+    """
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -24,6 +27,9 @@ class User(Base):
 
 
 class Category(Base):
+    """
+    Registered Categories information is stored in db
+    """
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True)
@@ -42,6 +48,9 @@ class Category(Base):
 
 
 class Item(Base):
+    """
+    Registered Items information is stored in db
+    """
     __tablename__ = 'item'
 
     name = Column(String(80), nullable=False)
@@ -49,7 +58,8 @@ class Item(Base):
     description = Column(String(250))
 
     category_id = Column(Integer, ForeignKey('category.id'))
-    category = relationship(Category)
+    # category = relationship(Category)
+    category = relationship(Category, cascade="all,delete", backref="children")
 
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
@@ -63,6 +73,7 @@ class Item(Base):
             'category_id': self.category_id,
             'id': self.id,
         }
+
 
 engine = create_engine('sqlite:///Categories.db')
 
